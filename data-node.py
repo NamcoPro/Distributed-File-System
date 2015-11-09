@@ -6,7 +6,7 @@
 # Description:
 # 	data node server for the DFS
 #
-#ayy
+
 from Packet import *
 
 import sys
@@ -16,7 +16,8 @@ import uuid
 import os.path
 
 def usage():
-	print """Usage: python %s <server> <port> <data path> <metadata port,default=8000>""" % sys.argv[0]
+	print """Usage: python %s <server> <port> <data path> \
+	<metadata port,default=8000>""" % sys.argv[0]
 	sys.exit(0)
 
 
