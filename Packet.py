@@ -13,15 +13,15 @@ import json
 class Packet:
 
 	def __init__(self):
-	
+
 		self.commands = ["reg", "list", "put", "get", "dblks"]
 		self.packet = {}
-		
+
 	def getEncodedPacket(self):
-		"""returns a seriliazed packet ready to send through the network.  
+		"""returns a seriliazed packet ready to send through the network.
 		First you need to build the packets.  See BuildXPacket functions."""
 
-		return json.dumps(self.packet) 
+		return json.dumps(self.packet)
 
 	def getCommand(self):
 		"""Returns the command type of a packet"""
@@ -31,7 +31,7 @@ class Packet:
 		return None
 
 	def getAddr(self):
-		"""Returns the IP address of a server""" 
+		"""Returns the IP address of a server"""
 		if self.packet.has_key("addr"):
 			return self.packet["addr"]
 		return None
@@ -43,12 +43,12 @@ class Packet:
 
 	def DecodePacket(self, packet):
 		"""Receives a serialized message and turns it into a packet object."""
-		self.packet = json.loads(packet)	
+		self.packet = json.loads(packet)
 
 	def BuildRegPacket(self, addr, port):
 		"""Builds a registration packet"""
 		self.packet = {"command": "reg", "addr": addr, "port": port}
-		
+
 
 	def BuildListPacket(self):
 		"""Builds a list packet for file listing"""
@@ -58,7 +58,7 @@ class Packet:
 	def BuildListResponse(self, lfiles):
 		"""Builds a list response packet"""
 
-		self.packet = {"files": lfiles}	
+		self.packet = {"files": lfiles}
 
 	def getFileArray(self):
 		"""Builds a list response packet"""
@@ -92,17 +92,17 @@ class Packet:
 
 	def getBlockID(self):
 		"""Returns a the block_id from a packet."""
-			return self.packet["blockid"]
+		return self.packet["blockid"]
 
 	def getFileInfo(self):
 		"""Returns the file info in a packet."""
 		if self.packet.has_key("fname") and self.packet.has_key("fsize"):
-			return self.packet["fname"], self.packet["fsize"] 
+			return self.packet["fname"], self.packet["fsize"]
 
 	def getFileName(self):
 		"""Returns the file name in a packet."""
 		if self.packet.has_key("fname"):
-			return self.packet["fname"] 
+			return self.packet["fname"]
 
 	def BuildGetResponse(self, metalist, fsize):
 		"""Builds a list of data node servers with the blocks of a file, and file size."""
@@ -121,7 +121,7 @@ class Packet:
 		return None
 
 	def getDataBlocks(self):
-		"""Returns a list of data blocks""" 
+		"""Returns a list of data blocks"""
 		if self.packet.has_key("blocks"):
 			return self.packet["blocks"]
 		return None
@@ -130,10 +130,3 @@ class Packet:
 		"""Builds a packet type"""
 		if cmd in self.commands:
 			self.packet = {"command": cmd}
-
-
-
-		
-	
-		
-		
