@@ -8,10 +8,13 @@
 #
 #
 
+#to commit some new file
+#really, please commit
+
 import socket
 import sys
 import os.path
-
+from math import sqrt
 from Packet import *
 
 def usage():
@@ -21,7 +24,7 @@ def usage():
 def copyToDFS(address, fname, path):
 	""" Contact the metadata server to ask to copu file fname,
 	    get a list of data nodes. Open the file in path to read,
-	    divide in blocks and send to the data nodes. 
+	    divide in blocks and send to the data nodes.
 	"""
 
 	# Create a connection to the data server
@@ -33,7 +36,7 @@ def copyToDFS(address, fname, path):
 	# Fill code
 
 	# Create a Put packet with the fname and the length of the data,
-	# and sends it to the metadata server 
+	# and sends it to the metadata server
 
 	# Fill code
 
@@ -42,12 +45,12 @@ def copyToDFS(address, fname, path):
 	# Divide the file in blocks
 	# Send the blocks to the data servers
 
-	# Fill code	
+	# Fill code
 
 	# Notify the metadata server where the blocks are saved.
 
 	# Fill code
-	
+
 def copyFromDFS(address, fname, path):
 	""" Contact the metadata server to ask for the file blocks of
 	    the file fname.  Get the data blocks from the data nodes.
@@ -63,7 +66,7 @@ def copyFromDFS(address, fname, path):
 	# Fill code
 
     	# Save the file
-	
+
 	# Fill code
 
 if __name__ == "__main__":
@@ -97,5 +100,3 @@ if __name__ == "__main__":
 			usage()
 
 		copyToDFS((ip, port), to_path, from_path)
-
-
