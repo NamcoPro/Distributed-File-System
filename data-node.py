@@ -6,7 +6,7 @@
 # Description:
 # 	data node server for the DFS
 #
-
+#ayy
 from Packet import *
 
 import sys
@@ -16,7 +16,7 @@ import uuid
 import os.path
 
 def usage():
-	print """Usage: python %s <server> <port> <data path> <metadata port,default=8000>""" % sys.argv[0] 
+	print """Usage: python %s <server> <port> <data path> <metadata port,default=8000>""" % sys.argv[0]
 	sys.exit(0)
 
 
@@ -26,8 +26,8 @@ def register(meta_ip, meta_port, data_ip, data_port):
 	"""
 
 	# Establish connection
-	
-	# Fill code	
+
+	# Fill code
 
 	try:
 		response = "NAK"
@@ -45,13 +45,13 @@ def register(meta_ip, meta_port, data_ip, data_port):
 
 	finally:
 		sock.close()
-	
+
 
 class DataNodeTCPHandler(SocketServer.BaseRequestHandler):
 
 	def handle_put(self, p):
 
-		"""Receives a block of data from a copy client, and 
+		"""Receives a block of data from a copy client, and
 		   saves it with an unique ID.  The ID is sent back to the
 		   copy client.
 		"""
@@ -64,21 +64,21 @@ class DataNodeTCPHandler(SocketServer.BaseRequestHandler):
 		blockid = str(uuid.uuid1())
 
 
-		# Open the file for the new data block.  
+		# Open the file for the new data block.
 		# Receive the data block.
 		# Send the block id back
 
 		# Fill code
 
 	def handle_get(self, p):
-		
+
 		# Get the block id from the packet
 		blockid = p.getBlockID()
 
 
 		# Read the file with the block id data
 		# Send it back to the copy client.
-		
+
 		# Fill code
 
 	def handle(self):
@@ -94,7 +94,7 @@ class DataNodeTCPHandler(SocketServer.BaseRequestHandler):
 
 		elif cmd == "get":
 			self.handle_get(p)
-		
+
 
 if __name__ == "__main__":
 
