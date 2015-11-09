@@ -20,7 +20,6 @@ def usage():
 	<metadata port,default=8000>""" % sys.argv[0]
 	sys.exit(0)
 
-
 def register(meta_ip, meta_port, data_ip, data_port):
 	"""Creates a connection with the metadata server and
 	   register as data node
