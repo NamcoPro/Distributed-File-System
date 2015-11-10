@@ -6,20 +6,25 @@
 # Description:
 # 	List client for the DFS
 #
-
-
-
-import socket
+from socket import socket
 
 from Packet import *
 
 def usage():
-	print """Usage: python %s <server>:<port, default=8000>""" % sys.argv[0] 
+	print """Usage: python %s <server>:<port, default=8000>""" % sys.argv[0]
 	sys.exit(0)
 
 def client(ip, port):
+	sock = socket()
+	sock.connect((ip, port))
+	sock.sendall("list")
+
+	message = sock.recv(1024)
+	print message
+
 
 	# Contacts the metadata server and ask for list of files.
+
 
 if __name__ == "__main__":
 
@@ -27,7 +32,7 @@ if __name__ == "__main__":
 		usage()
 
 	ip = None
-	port = None 
+	port = None
 	server = sys.argv[1].split(":")
 	if len(server == 1):
 		ip = server[0]
