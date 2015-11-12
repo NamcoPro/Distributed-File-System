@@ -37,7 +37,6 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 	def handle_list(self, db):
 		"""Get the file list from the database and send list to client"""
 		try:
-			# Fill code here
 			#Packet for the ls.py response
 			list_p = Packet()
 			#GetFiles() already sends the files in the neat format
@@ -51,12 +50,10 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 		"""Insert new file into the database and send data nodes to save
 		   the file.
 		"""
-		# Fill code
 		info = p.GetFileInfo()
 
 		#insert file makes node attributes
 		if db.InsertFile(info[0], info[1]):
-			# Fill code
 			#BuildPutResponse requires a metadata list,
 			#getDataNodes returns a list of metadata
 			p.BuildPutResponse(db.getDataNodes())
@@ -71,13 +68,13 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 		"""
 
 		# Fill code to get the file name from packet and then
-		filename = p.getFileName()
 		# get the fsize and array of metadata server
+
 		#GetFileInode returns filesize and a list of the metadata
+		filename = p.getFileName()
 		fsize, meta_list = db.GetFileInode(filename)
 
 		if fsize:
-			# Fill code
 			#same as the others, making a packet for the response
 			p.BuildGetResponse(meta_list, fsize)
 			self.request.sendall(p.getEncodedPacket())
@@ -120,22 +117,18 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 
 		elif cmd == "list":
 			# Client asking for a list of files
-			# Fill code
 			self.handle_list(db)
 
 		elif cmd == "put":
 			# Client asking for servers to put data
-			# Fill code
 			self.handle_put(db, p)
 
 		elif cmd == "get":
 			# Client asking for servers to get data
-			# Fill code
 			self.handle_get(db, p)
 
 		elif cmd == "dblks":
 			# Client sending data blocks for file
-			# Fill code
 			self.handle_blocks(db, p)
 
 		db.Close()
