@@ -138,7 +138,6 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 			# Fill code
 			self.handle_blocks(db, p)
 
-
 		db.Close()
 
 if __name__ == "__main__":
