@@ -8,13 +8,10 @@
 #
 #
 
-#to commit some new file
-#really, please commit
 
 import socket
 import sys
 import os.path
-from math import sqrt
 from Packet import *
 
 def usage():
@@ -51,6 +48,7 @@ def copyToDFS(address, fname, path):
 
 	# Fill code
 
+#Doubts
 def copyFromDFS(address, fname, path):
 	""" Contact the metadata server to ask for the file blocks of
 	    the file fname.  Get the data blocks from the data nodes.
@@ -59,9 +57,20 @@ def copyFromDFS(address, fname, path):
 
    	# Contact the metadata server to ask for information of fname
 
-	# Fill code
+	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	sock.connect(address)
+
+	#getting the information given the file's filename
+	p = Packet()
+	p.BuildGetPacket(fname)
+	sock.sendall(p.getEncodedPacket())
+	#receiving response
+	message = sock.recv(1024)
+	p.DecodePacket(message)
+	data_nodes = p.getDataNodes()
 
 	# If there is no error response Retreive the data blocks
+
 
 	# Fill code
 
