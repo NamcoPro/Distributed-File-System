@@ -26,7 +26,8 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 			NAK if problem, DUP if the IP and port already registered
 		"""
 		try:
-			if 1:
+			#new data node client, Packets man how do they work
+			if(db.AddDataNode(p.getAddr(), p.getPort())):
 				self.request.sendall("ACK")
 			else:
 				self.request.sendall("DUP")
@@ -37,10 +38,11 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 		"""Get the file list from the database and send list to client"""
 		try:
 			# Fill code here
-			for filename, size in db.getFiles():
-				message = filename + ":" + size
-				self.request.sendall(message)
-
+			#Packet for the ls.py response
+			list_p = Packet()
+			#GetFiles() already sends the files in the neat format
+			list_p.BuildListResponse(db.GetFiles())
+			self.request.sendall(list_p.getEncodedPacket())
 
 		except:
 			self.request.sendall("NAK")
@@ -49,12 +51,16 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 		"""Insert new file into the database and send data nodes to save
 		   the file.
 		"""
-
 		# Fill code
+		info = p.GetFileInfo()
 
+		#insert file makes node attributes
 		if db.InsertFile(info[0], info[1]):
-			pass
 			# Fill code
+			#BuildPutResponse requires a metadata list,
+			#getDataNodes returns a list of metadata
+			p.BuildPutResponse(db.getDataNodes())
+			self.request.sendall(p.getEncodedPacket())
 
 		else:
 			self.request.sendall("DUP")
@@ -65,24 +71,28 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 		"""
 
 		# Fill code to get the file name from packet and then
+		filename = p.getFileName()
 		# get the fsize and array of metadata server
+		#GetFileInode returns filesize and a list of the metadata
+		fsize, meta_list = db.GetFileInode(filename)
 
 		if fsize:
-			pass
 			# Fill code
-
+			#same as the others, making a packet for the response
+			p.BuildGetResponse(meta_list, fsize)
 			self.request.sendall(p.getEncodedPacket())
 		else:
 			self.request.sendall("NFOUND")
 
 	def handle_blocks(self, db, p):
 		"""Add the data blocks to the file inode"""
-		pass
 		# Fill code to get file name and blocks from
 		# packet
+		filename = p.getFileName()
+		blocks = p.getDataBlocks()
 
 		# Fill code to add blocks to file inode
-
+		db.AddBlockToInode(filename, blocks)
 
 	def handle(self):
 
@@ -99,7 +109,6 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 
 		# Decode the packet received
 		p.DecodePacket(msg)
-
 
 		# Extract the command part of the received packet
 		cmd = p.getCommand()
