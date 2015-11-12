@@ -35,6 +35,7 @@ class Packet:
 		if self.packet.has_key("addr"):
 			return self.packet["addr"]
 		return None
+		
 	def getPort(self):
 		"""Returns the port number of a server"""
 		if self.packet.has_key("port"):
