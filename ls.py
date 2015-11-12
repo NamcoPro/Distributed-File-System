@@ -6,7 +6,7 @@
 # Description:
 # 	List client for the DFS
 #
-from socket import socket
+import socket
 from sys import argv, exit
 
 from Packet import *
@@ -15,16 +15,28 @@ def usage():
 	print """Usage: python %s <server>:<port, default=8000>""" % argv[0]
 	exit(0)
 
+# Contacts the metadata server and ask for list of files.
 def client(ip, port):
-	sock = socket()
+	#socket for connecting to the metadata server
+	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	sock.connect((ip, port))
-	sock.sendall("list")
 
+	#packet object used to interact with the metadata server
+	p = Packet()
+	#list command
+	p.BuildListPacket()
+	#sending the encoded list command
+	sock.sendall(p.getEncodedPacket())
+
+	#dealing with the metadata server's response
 	message = sock.recv(1024)
-	print message
+	p.DecodePacket(message)
 
+	#get file array is a cool guy and has all the files if successful
+	for filename, size in p.getFileArray():
+		print filename, size, "bytes"
 
-	# Contacts the metadata server and ask for list of files.
+	sock.close()
 
 #what the fuck is going on
 if __name__ == "__main__":
