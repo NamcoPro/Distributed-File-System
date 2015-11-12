@@ -81,6 +81,7 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 		else:
 			self.request.sendall("NFOUND")
 
+	#Doubts
 	def handle_blocks(self, db, p):
 		"""Add the data blocks to the file inode"""
 		# Fill code to get file name and blocks from

@@ -26,9 +26,10 @@ def register(meta_ip, meta_port, data_ip, data_port):
 	"""
 
 	# Establish connection
+	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	sock.connect((meta_ip, meta_port))
 
-	# Fill code
-
+	#Wow. Everything was all here. Fucking Packets, man.
 	try:
 		response = "NAK"
 		sp = Packet()
@@ -49,6 +50,7 @@ def register(meta_ip, meta_port, data_ip, data_port):
 
 class DataNodeTCPHandler(SocketServer.BaseRequestHandler):
 
+	#Doubts
 	def handle_put(self, p):
 
 		"""Receives a block of data from a copy client, and
@@ -65,10 +67,14 @@ class DataNodeTCPHandler(SocketServer.BaseRequestHandler):
 
 
 		# Open the file for the new data block.
+		block_fname = "%s_%s" % (fname, blockid)
+		wfile = open(block_fname, "w")
 		# Receive the data block.
+		data_block = self.request.recv(1024)
+		wfile.write(data_block)
+		wfile.close()
 		# Send the block id back
 
-		# Fill code
 
 	def handle_get(self, p):
 
