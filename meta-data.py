@@ -30,8 +30,10 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 			if(db.AddDataNode(p.getAddr(), p.getPort())):
 				self.request.sendall("ACK")
 			else:
+				print "Duplicate register."
 				self.request.sendall("DUP")
 		except:
+			print "Problem in handle_reg()."
 			self.request.sendall("NAK")
 
 	def handle_list(self, db):
@@ -44,6 +46,7 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 			self.request.sendall(list_p.getEncodedPacket())
 
 		except:
+			print "Problem in handle_list()."
 			self.request.sendall("NAK")
 
 	def handle_put(self, db, p):
@@ -60,6 +63,7 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 			self.request.sendall(p.getEncodedPacket())
 
 		else:
+			print "Duplicate file."
 			self.request.sendall("DUP")
 
 	def handle_get(self, db, p):
@@ -79,9 +83,10 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 			p.BuildGetResponse(meta_list, fsize)
 			self.request.sendall(p.getEncodedPacket())
 		else:
+			print "handle_get() got 0 file size."
 			self.request.sendall("NFOUND")
 
-	#Doubts
+	#Doubts, I think they're cleared.
 	def handle_blocks(self, db, p):
 		"""Add the data blocks to the file inode"""
 		# Fill code to get file name and blocks from
@@ -90,7 +95,12 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 		blocks = p.getDataBlocks()
 
 		# Fill code to add blocks to file inode
-		db.AddBlockToInode(filename, blocks)
+		if(db.AddBlockToInode(filename, blocks)):
+			p.BuildDataBlockPacket(filename, blocks)
+			self.request.sendall(p.getEncodedPacket())
+
+		else:
+			print "Adding blocks to %s failed." % filename
 
 	def handle(self):
 
