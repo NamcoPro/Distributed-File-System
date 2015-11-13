@@ -67,12 +67,9 @@ class DataNodeTCPHandler(SocketServer.BaseRequestHandler):
 
 
 		# Open the file for the new data block.
-		block_fname = "%s_%s" % (fname, blockid)
-		wfile = open(block_fname, "w")
+
 		# Receive the data block.
-		data_block = self.request.recv(1024)
-		wfile.write(data_block)
-		wfile.close()
+
 		# Send the block id back
 
 
