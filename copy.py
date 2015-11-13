@@ -31,7 +31,7 @@ def copyToDFS(address, fname, path):
 
 	# Read file
 
-	rfile = open(fname, "r")
+    rfile = open(fname, "r")
     file_string = rfile.read()
     filesize = len(file_string)
     rfile.close()
@@ -39,7 +39,7 @@ def copyToDFS(address, fname, path):
 	# Create a Put packet with the fname and the length of the data,
 	# and sends it to the metadata server
 
-	p = Packet()
+    p = Packet()
     p.BuildPutPacket(fname, filesize)
     sock.sendall(p.getEncodedPacket())
 
@@ -48,7 +48,7 @@ def copyToDFS(address, fname, path):
 	# Divide the file in blocks
 	# Send the blocks to the data servers
 
-	message = sock.recv(1024)
+    message = sock.recv(1024)
     p.DecodePacket(message)
     #Packet.getDataNodes() returns a list of elements
     data_nodes = p.getDataNodes()
