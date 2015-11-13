@@ -26,7 +26,7 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 			NAK if problem, DUP if the IP and port already registered
 		"""
 		try:
-			#new data node client, Packets man how do they work
+			#new data node client, Packets and Databases man how do they work
 			if(db.AddDataNode(p.getAddr(), p.getPort())):
 				self.request.sendall("ACK")
 			else:
