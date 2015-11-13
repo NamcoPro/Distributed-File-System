@@ -13,7 +13,7 @@ import sys
 import socket
 import SocketServer
 import uuid
-import os.path
+import os
 
 def usage():
 	print """Usage: python %s <server> <port> <data path> \
@@ -110,13 +110,14 @@ if __name__ == "__main__":
 		PORT = int(sys.argv[2])
 		DATA_PATH = sys.argv[3]
 
-		if len(sys.argv > 4):
+		if len(sys.argv) > 4:
 			META_PORT = int(sys.argv[4])
 
 		if not os.path.isdir(DATA_PATH):
 			print "Error: Data path %s is not a directory." % DATA_PATH
 			usage()
 	except:
+        print "Exception."
 		usage()
 
 
