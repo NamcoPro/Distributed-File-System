@@ -100,7 +100,7 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 			self.request.sendall(p.getEncodedPacket())
 
 		else:
-			print "Adding blocks to %s failed." % filename
+			print "Adding blocks failed.""
 
 	def handle(self):
 
