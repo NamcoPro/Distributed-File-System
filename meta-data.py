@@ -53,13 +53,13 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 		"""Insert new file into the database and send data nodes to save
 		   the file.
 		"""
-		info = p.GetFileInfo()
+		info = p.getFileInfo()
 
 		#insert file makes node attributes
 		if db.InsertFile(info[0], info[1]):
 			#BuildPutResponse requires a metadata list,
 			#getDataNodes returns a list of metadata
-			p.BuildPutResponse(db.getDataNodes())
+			p.BuildPutResponse(db.GetDataNodes())
 			self.request.sendall(p.getEncodedPacket())
 
 		else:
