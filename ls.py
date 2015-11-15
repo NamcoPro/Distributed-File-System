@@ -15,6 +15,29 @@ def usage():
 	print """Usage: python %s <server>:<port, default=8000>""" % argv[0]
 	exit(0)
 
+def recv_with_size(sock):
+    """Receives a size so that the message can be sent in one go"""
+    size = sock.recv(1024)
+
+    sock.sendall("OK")
+
+    message = sock.recv(int(size))
+
+    return message
+
+def sendall_with_size(sock, message):
+    """Sends a size for the message so that the receiver can receive in
+    one go."""
+    sock.sendall(str(len(message)))
+
+    OK = sock.recv(1024)
+
+    if(OK == "OK"):
+        sock.sendall(message)
+
+    else:
+        print "sendall_with_size had a problem with %s." % message
+
 # Contacts the metadata server and ask for list of files.
 def client(ip, port):
 	#socket for connecting to the metadata server
@@ -25,12 +48,14 @@ def client(ip, port):
 	p = Packet()
 	#list command
 	p.BuildListPacket()
-	#sending the encoded list command
-	sock.sendall(p.getEncodedPacket())
+
+    #sending the size and later the command
+    message = p.getEncodedPacket()
+    sendall_with_size(sock, message)
 
 	#dealing with the metadata server's response
-	message = sock.recv(4096)
-	p.DecodePacket(message)
+	response = recv_with_size(sock)
+	p.DecodePacket(response)
 
 	#get file array is a cool guy and has all the files if successful
 	for filename, size in p.getFileArray():

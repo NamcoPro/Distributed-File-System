@@ -41,6 +41,33 @@ def partition_string(string, p_size):
         string_list.append(string[(index_limit * p_size):len(string)])
         return string_list
 
+def usage():
+	print """Usage: python %s <server>:<port, default=8000>""" % argv[0]
+	exit(0)
+
+def recv_with_size(sock):
+    """Receives a size so that the message can be sent in one go"""
+    size = sock.recv(1024)
+
+    sock.sendall("OK")
+
+    message = sock.recv(int(size))
+
+    return message
+
+def sendall_with_size(sock, message):
+    """Sends a size for the message so that the receiver can receive in
+    one go."""
+    sock.sendall(str(len(message)))
+
+    OK = sock.recv(1024)
+
+    if(OK == "OK"):
+        sock.sendall(message)
+
+    else:
+        print "sendall_with_size had a problem with %s." % message
+
 def copyToDFS(address, fname, path):
     """ Contact the metadata server to ask to copy file fname,
         get a list of data nodes. Open the file in path to read,

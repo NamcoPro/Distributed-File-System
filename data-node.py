@@ -50,6 +50,30 @@ def register(meta_ip, meta_port, data_ip, data_port):
 
 class DataNodeTCPHandler(SocketServer.BaseRequestHandler):
 
+    def recv_with_size(self):
+        """Receives a size so that the message can be sent in one go"""
+        size = self.request.recv(1024)
+
+        self.request.sendall("OK")
+
+        message = self.request.recv(int(size))
+
+        return message
+
+    def sendall_with_size(self, message):
+        """Sends a size for the message so that the receiver can receive in
+        one go."""
+
+        self.request.sendall(str(len(message)))
+
+        OK = self.request.recv(1024)
+
+        if(OK == "OK"):
+            self.request.sendall(message)
+
+        else:
+            print "sendall_with_size had a problem with %s." % message
+            
     def handle_put(self, p):
         """Receives a block of data from a copy client, and
            saves it with an unique ID.  The ID is sent back to the
