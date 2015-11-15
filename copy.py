@@ -39,6 +39,31 @@ def partition_string(string, p_size):
         string_list.append(string[(index_limit * p_size):len(string)])
         return string_list
 
+#For the blocks. The database or metadata-server sorts the nodes according to
+#the first one connected.
+def divide_list(a_list, d_size):
+    """Returns a list of lists where the main list is d_size."""
+    nest_list = []
+    if(len(a_list) < d_size):
+        nest_list.append(a_list)
+        return nest_list
+
+    list_size = len(a_list) / d_size
+    for i in range(d_size):
+        temp = [a_list[j] for j in range(i * list_size, (i + 1) * list_size)]
+        nest_list.append(temp)
+
+    #everyone gets their equal share
+    if(len(a_list) % d_size == 0):
+        return nest_list
+
+    #Last one is screwed.
+    else:
+        for i in range(d_size * list_size, len(a_list)):
+            nest_list[d_size - 1].append(a_list[i])
+
+        return nest_list
+
 #NEEDLESS OVERHEAD
 #MUH SIZE DOESN'T FIT ALL
 def recv_with_size(sock):
@@ -47,7 +72,9 @@ def recv_with_size(sock):
 
     sock.sendall("OK")
 
-    message = sock.recv(int(size))
+    message = sock.recv(1024)
+    while(len(message) < int(size)):
+        message += sock.recv(1024)
 
     return message
 
@@ -113,41 +140,40 @@ def copyToDFS(address, fname, path):
 
     #this divides the file into "blocks"
     file_segments = partition_string(file_string, block_size)
-    #for iterating the nodes in a round robin style
-    index = 0
+    #this divides the file into shared workloads
+    #threads would be cool, but not today
+    node_workload = divide_list(file_segments, node_amount)
 
-    for segment in file_segments:
-        #connecting to the data nodes
-        node_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        IP = data_nodes[index % node_amount][0]
-        PORT = data_nodes[index % node_amount][1]
-        node_sock.connect((IP, PORT))
+    #Go through every node and sned the given blocks
+    for node_id in range(node_amount):
+        for segment in node_workload[node_id]:
+            node_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            IP = data_nodes[node_id][0]
+            PORT = data_nodes[node_id][1]
+            node_sock.connect((IP, PORT))
 
-        #sends the put message to the current data node
-        p.BuildPutPacket(fname, len(segment))
-        sendall_with_size(node_sock, p.getEncodedPacket())
+            #sends the put message to the current data node
+            p.BuildPutPacket(fname, len(segment))
+            sendall_with_size(node_sock, p.getEncodedPacket())
 
-        #waiting for an OK
-        OK = recv_with_size(node_sock)
+            #waiting for an OK
+            OK = recv_with_size(node_sock)
 
-        #sending the block to the data node
-        sendall_with_size(node_sock, segment)
+            #sending the block to the data node
+            sendall_with_size(node_sock, segment)
 
-        #receive the unique block ID
-        blockid = recv_with_size(node_sock)
+            #receive the unique block ID
+            blockid = recv_with_size(node_sock)
 
-        #adding muh blocks
-        blocks.append((IP, str(PORT), blockid))
+            #adding muh blocks
+            blocks.append((IP, str(PORT), blockid))
 
-        index += 1
-
-        #node_sock.close()
+            node_sock.close()
 
     # Notify the metadata server where the blocks are saved.
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(address)
-    #print blocks
     p.BuildDataBlockPacket(fname, blocks)
     sendall_with_size(sock, p.getEncodedPacket())
     meta_message = recv_with_size(sock)
