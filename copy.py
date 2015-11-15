@@ -72,14 +72,14 @@ def copyToDFS(address, fname, path):
     # Send the blocks to the data servers
 
     message = sock.recv(1024)
-    print message
+    #print message
     p.DecodePacket(message)
 
     #Packet.getDataNodes() returns a list of elements
     #They are of the form (address, port)
     data_nodes = p.getDataNodes()
     node_amount = len(data_nodes) # would be nice if I implemented threads
-    block_size = 4096 # blocks of size 4K
+    block_size = 128 # blocks of size 4K
     blocks = [] #for the metadata server
 
     #this divides the file into "blocks"
@@ -105,10 +105,12 @@ def copyToDFS(address, fname, path):
         node_sock.sendall(segment)
 
         #receive the unique block ID
-        blockid = sock.recv(1024)
+        blockid = node_sock.recv(1024)
 
         #adding muh blocks
-        blocks.append((IP, PORT, blockid))
+        #DATABASE WEANTS THE PORT AS STRING
+        #AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+        blocks.append((IP, str(PORT), blockid))
 
         index += 1
 
@@ -116,34 +118,45 @@ def copyToDFS(address, fname, path):
 
     # Notify the metadata server where the blocks are saved.
 
-    p.BuildDataBlockPacket(fname, blocks)
-    sock.sendall(p.getEncodedPacket())
+    print blocks
+    block_p = Packet()
+    block_p.BuildDataBlockPacket(fname, blocks)
+    sock.sendall(block_p.getEncodedPacket())
+    meta_message = sock.recv(1024)
+
+    if(meta_message == "ACK"):
+        print "Acknowledged."
+
+    else:
+        print meta_message
 
     sock.close()
 
 #Doubts
 def copyFromDFS(address, fname, path):
-    pass
     """ Contact the metadata server to ask for the file blocks of
         the file fname.  Get the data blocks from the data nodes.
         Saves the data in path.
     """
+    # Contact the metadata server to ask for information of fname
 
-    #Contact the metadata server to ask for information of fname
-
-    #getting the information given the file's filename
-
-    #receiving response
-
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect(address)
+    p = Packet()
+    p.BuildGetPacket(fname)
+    sock.sendall(p.getEncodedPacket())
 
     # If there is no error response Retreive the data blocks
 
+    # Save the file
 
-    # Fill code
+    message = sock.recv(1024)
+    print message
+    p.DecodePacket(message)
+    data_nodes = p.getDataNodes()
+    print data_nodes
 
-        # Save the file
 
-    # Fill code
 
 if __name__ == "__main__":
 #	client("localhost", 8000)
@@ -159,7 +172,7 @@ if __name__ == "__main__":
         from_path = file_from[2]
         to_path = sys.argv[2]
 
-        if os.path.isdir(to_path):
+        if os.path.isdir(from_path):
             print "Error: path %s is a directory.  Please name the file." % to_path
             usage()
 

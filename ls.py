@@ -29,7 +29,7 @@ def client(ip, port):
 	sock.sendall(p.getEncodedPacket())
 
 	#dealing with the metadata server's response
-	message = sock.recv(1024)
+	message = sock.recv(4096)
 	p.DecodePacket(message)
 
 	#get file array is a cool guy and has all the files if successful

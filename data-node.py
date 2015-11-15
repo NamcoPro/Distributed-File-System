@@ -58,20 +58,21 @@ class DataNodeTCPHandler(SocketServer.BaseRequestHandler):
         """
 
         fname, fsize = p.getFileInfo()
+        print fsize, type(fsize)
 
-        #really, what is this?
-        #self.request.send("OK")
+        #really, what is this?, OK, I got it.
+        self.request.send("OK")
 
         # Generates an unique block id.
         blockid = str(uuid.uuid1())
 
 
         # Open the file for the new data block.
-        path_and_name = "%s/%s_%s" % (DATA_PATH, fname, blockid)
+        path_and_name = "%s/%s" % (DATA_PATH, blockid)
         block_file = open(path_and_name, "w")
 
         # Receive the data block.
-        block = self.request.recv(1024)
+        block = self.request.recv(fsize)
 
         #writting the block contents to the file
         block_file.write(block)
