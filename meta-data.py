@@ -27,7 +27,9 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 
         self.request.sendall("OK")
 
-        message = self.request.recv(int(size))
+        message = self.request.recv(1024)
+        while(len(message) < int(size)):
+            message += self.request.recv(1024)
 
         return message
 
