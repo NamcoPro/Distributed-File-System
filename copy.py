@@ -7,8 +7,7 @@
 # 	Copy client for the DFS
 #
 #
-
-
+import sys
 import socket
 import sys
 import os.path
