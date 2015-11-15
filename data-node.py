@@ -20,6 +20,29 @@ def usage():
     <metadata port,default=8000>""" % sys.argv[0]
     sys.exit(0)
 
+def recv_with_size(sock):
+    """Receives a size so that the message can be sent in one go"""
+    size = sock.recv(1024)
+
+    sock.sendall("OK")
+
+    message = sock.recv(int(size))
+
+    return message
+
+def sendall_with_size(sock, message):
+    """Sends a size for the message so that the receiver can receive in
+    one go."""
+    sock.sendall(str(len(message)))
+
+    OK = sock.recv(1024)
+
+    if(OK == "OK"):
+        sock.sendall(message)
+
+    else:
+        print "sendall_with_size had a problem with %s." % message
+
 def register(meta_ip, meta_port, data_ip, data_port):
     """Creates a connection with the metadata server and
        register as data node
@@ -35,8 +58,8 @@ def register(meta_ip, meta_port, data_ip, data_port):
         sp = Packet()
         while response == "NAK":
             sp.BuildRegPacket(data_ip, data_port)
-            sock.sendall(sp.getEncodedPacket())
-            response = sock.recv(1024)
+            sendall_with_size(sock, sp.getEncodedPacket())
+            response = recv_with_size(sock)
 
             if response == "DUP":
                 print "Duplicate Registration"
