@@ -88,6 +88,7 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 
     #Doubts, I think they're cleared.
     #No, they're not.
+    #Yes, they are.
     def handle_blocks(self, db, p):
         """Add the data blocks to the file inode"""
         # Fill code to get file name and blocks from
@@ -97,7 +98,6 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 
         # Fill code to add blocks to file inode
         if(db.AddBlockToInode(filename, blocks)):
-            print "Blocks added."
             self.request.sendall("ACK")
 
         else:
