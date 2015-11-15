@@ -45,6 +45,8 @@ def usage():
 	print """Usage: python %s <server>:<port, default=8000>""" % argv[0]
 	exit(0)
 
+#NEEDLESS OVERHEAD
+#MUH SIZE DOESN'T FIT ALL
 def recv_with_size(sock):
     """Receives a size so that the message can be sent in one go"""
     size = sock.recv(1024)
@@ -91,15 +93,14 @@ def copyToDFS(address, fname, path):
 
     p = Packet()
     p.BuildPutPacket(fname, filesize)
-    sock.sendall(p.getEncodedPacket())
+    sendall_with_size(sock, p.getEncodedPacket())
 
     # If no error or file exists
     # Get the list of data nodes.
     # Divide the file in blocks
     # Send the blocks to the data servers
 
-    message = sock.recv(1024)
-    sock.close()
+    message = recv_with_size(sock)
     #print message
     p.DecodePacket(message)
 
@@ -107,7 +108,13 @@ def copyToDFS(address, fname, path):
     #They are of the form (address, port)
     data_nodes = p.getDataNodes()
     node_amount = len(data_nodes) # would be nice if I implemented threads
-    block_size = 2 ** 16 # blocks of size about 64k
+
+    # blocks of size about 64k
+    block_size = 2 ** 16
+    #for files bigger than 100MB
+    if(filesize > (100 * (10 ** 6))):
+        block_size = 2 ** 22 #blocks of size about 4096K
+
     blocks = [] #for the metadata server
 
     #this divides the file into "blocks"
@@ -124,16 +131,16 @@ def copyToDFS(address, fname, path):
 
         #sends the put message to the current data node
         p.BuildPutPacket(fname, len(segment))
-        node_sock.sendall(p.getEncodedPacket())
+        sendall_with_size(node_sock, p.getEncodedPacket())
 
-        #waiting for the data node to send an OK
-        node_sock.recv(1024)
+        #waiting for an OK
+        OK = recv_with_size(node_sock)
 
         #sending the block to the data node
-        node_sock.sendall(segment)
+        sendall_with_size(node_sock, segment)
 
         #receive the unique block ID
-        blockid = node_sock.recv(1024)
+        blockid = recv_with_size(node_sock)
 
         #adding muh blocks
         blocks.append((IP, str(PORT), blockid))
@@ -148,8 +155,8 @@ def copyToDFS(address, fname, path):
     sock.connect(address)
     #print blocks
     p.BuildDataBlockPacket(fname, blocks)
-    sock.sendall(p.getEncodedPacket())
-    meta_message = sock.recv(1024)
+    sendall_with_size(sock, p.getEncodedPacket())
+    meta_message = recv_with_size(sock)
 
     if(meta_message == "ACK"):
         print "Acknowledged."
@@ -171,29 +178,27 @@ def copyFromDFS(address, fname, path):
     sock.connect(address)
     p = Packet()
     p.BuildGetPacket(fname)
-    sock.sendall(p.getEncodedPacket())
+    sendall_with_size(sock, p.getEncodedPacket())
 
     # If there is no error response Retreive the data blocks
 
     # Save the file
 
-    message = sock.recv(4096)
+    message = recv_with_size(sock)
     p.DecodePacket(message)
     #getDataNodes has ADDRESS, IP, BLOCK_ID
     data_nodes = p.getDataNodes()
 
-    wfile = open(path, "w")
+    destination = "%s/%s" % (path, "copy_" + fname)
+    wfile = open(destination, "w")
     for IP, PORT, BLOCK_ID in data_nodes:
         node_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         node_sock.connect((IP, PORT))
+
         p.BuildGetDataBlockPacket(BLOCK_ID)
-        node_sock.sendall(p.getEncodedPacket())
+        sendall_with_size(node_sock, p.getEncodedPacket())
 
-        block_size = node_sock.recv(1024)
-
-        node_sock.sendall("OK")
-
-        block = node_sock.recv(block_size)
+        block = recv_with_size(node_sock)
 
         wfile.write(block)
 
