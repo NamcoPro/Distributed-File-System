@@ -141,7 +141,7 @@ def copyToDFS(address, fname, path):
 
         index += 1
 
-        node_sock.close()
+        #node_sock.close()
 
     # Notify the metadata server where the blocks are saved.
 
