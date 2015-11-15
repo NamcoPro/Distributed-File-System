@@ -80,7 +80,7 @@ def copyToDFS(address, fname, path):
     #They are of the form (address, port)
     data_nodes = p.getDataNodes()
     node_amount = len(data_nodes) # would be nice if I implemented threads
-    block_size = 64 # blocks of size about 64k
+    block_size = 2 ** 16 # blocks of size about 64k
     blocks = [] #for the metadata server
 
     #this divides the file into "blocks"
@@ -152,14 +152,14 @@ def copyFromDFS(address, fname, path):
 
     message = sock.recv(4096)
     p.DecodePacket(message)
-    #getDataNodes has ADDRESS, IP, BLOCK-ID
+    #getDataNodes has ADDRESS, IP, BLOCK_ID
     data_nodes = p.getDataNodes()
 
     wfile = open(path, "w")
-    for IP, PORT, BLOCK-ID in data_nodes:
+    for IP, PORT, BLOCK_ID in data_nodes:
         node_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         node_sock.connect((IP, PORT))
-        p.BuildGetDataBlockPacket(BLOCK-ID)
+        p.BuildGetDataBlockPacket(BLOCK_ID)
         node_sock.sendall(p.getEncodedPacket())
 
         block_size = node_sock.recv(1024)
@@ -174,7 +174,7 @@ def copyFromDFS(address, fname, path):
 
     wfile.close()
 
-f __name__ == "__main__":
+if __name__ == "__main__":
 #	client("localhost", 8000)
     if len(sys.argv) < 3:
         usage()
