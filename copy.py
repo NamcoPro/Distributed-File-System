@@ -7,7 +7,6 @@
 # 	Copy client for the DFS
 #
 #
-import sys
 import socket
 import sys
 import os.path
@@ -41,8 +40,8 @@ def partition_string(string, p_size):
         return string_list
 
 def usage():
-	print """Usage: python %s <server>:<port, default=8000>""" % argv[0]
-	exit(0)
+	print """Usage: python %s <server>:<port, default=8000>""" % sys.argv[0]
+	sys.exit(0)
 
 #NEEDLESS OVERHEAD
 #MUH SIZE DOESN'T FIT ALL
