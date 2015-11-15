@@ -79,7 +79,7 @@ def copyToDFS(address, fname, path):
     #They are of the form (address, port)
     data_nodes = p.getDataNodes()
     node_amount = len(data_nodes) # would be nice if I implemented threads
-    block_size = 128 # blocks of size 4K
+    block_size = 4096 # blocks of size 4K
     blocks = [] #for the metadata server
 
     #this divides the file into "blocks"
