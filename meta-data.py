@@ -87,6 +87,7 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 			self.request.sendall("NFOUND")
 
 	#Doubts, I think they're cleared.
+    #No, they're not.
 	def handle_blocks(self, db, p):
 		"""Add the data blocks to the file inode"""
 		# Fill code to get file name and blocks from
@@ -96,8 +97,7 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 
 		# Fill code to add blocks to file inode
 		if(db.AddBlockToInode(filename, blocks)):
-			p.BuildDataBlockPacket(filename, blocks)
-			self.request.sendall(p.getEncodedPacket())
+			self.request.sendall("ACK")
 
 		else:
 			print "Adding blocks failed.""
