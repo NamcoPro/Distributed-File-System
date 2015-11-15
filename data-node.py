@@ -73,7 +73,7 @@ class DataNodeTCPHandler(SocketServer.BaseRequestHandler):
 
         else:
             print "sendall_with_size had a problem with %s." % message
-            
+
     def handle_put(self, p):
         """Receives a block of data from a copy client, and
            saves it with an unique ID.  The ID is sent back to the
@@ -83,32 +83,29 @@ class DataNodeTCPHandler(SocketServer.BaseRequestHandler):
         fname, fsize = p.getFileInfo()
         #print fsize, type(fsize)
 
-        #really, what is this?, OK, I got it.
-        self.request.send("OK")
+        self.sendall_with_size("OK")
 
         # Generates an unique block id.
         blockid = str(uuid.uuid1())
-
 
         # Open the file for the new data block.
         path_and_name = "%s/%s" % (DATA_PATH, blockid)
         block_file = open(path_and_name, "w")
 
         # Receive the data block.
-        block = self.request.recv(fsize)
+        block = recv_with_size()
 
         #writting the block contents to the file
         block_file.write(block)
         block_file.close()
 
         # Send the block id back
-        self.request.sendall(blockid)
+        self.sendall_with_size(blockid)
 
     def handle_get(self, p):
 
         # Get the block id from the packet
         blockid = p.getBlockID()
-
 
         # Read the file with the block id data
         # Send it back to the copy client.
@@ -118,16 +115,10 @@ class DataNodeTCPHandler(SocketServer.BaseRequestHandler):
         block = block_file.read()
         block_file.close()
 
-        #so that the copy client knows the size.
-        self.request.sendall(str(len(block)))
-
-        #waiting for an OK
-        self.request.recv(1024)
-
-        self.request.sendall(block)
+        self.sendall_with_size(block)
 
     def handle(self):
-        msg = self.request.recv(1024)
+        msg = self.recv_with_size()
         print msg, type(msg)
 
         p = Packet()
