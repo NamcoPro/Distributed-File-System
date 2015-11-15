@@ -18,6 +18,29 @@ def usage():
     print """Usage:\n\tFrom DFS: python %s <server>:<port>:<dfs file path> <destination file>\n\tTo   DFS: python %s <source file> <server>:<port>:<dfs file path>""" % (sys.argv[0], sys.argv[0])
     sys.exit(0)
 
+#This will be used to put the given file into "blocks"
+def partition_string(string, p_size):
+    """Returns a list of substrings of size p_size from the given string.
+       In the case where the given size isn't a divisor of the original
+       string's length, the very last file will have the remainder."""
+    string_list = []
+    if(len(string) < p_size):
+        string_list.append(string)
+        return string_list
+
+    index_limit = len(string) / p_size
+    for i in range(index_limit):
+        #this partitions the string with the desired partition size
+        string_list.append(string[(i * p_size):((i + 1) * p_size)])
+
+    if(len(string) % p_size == 0):
+        return string_list
+
+    else:
+        #the case where there's a remainder
+        string_list.append(string[(index_limit * p_size):len(string)])
+        return string_list
+
 def copyToDFS(address, fname, path):
     """ Contact the metadata server to ask to copy file fname,
         get a list of data nodes. Open the file in path to read,
@@ -51,25 +74,52 @@ def copyToDFS(address, fname, path):
     message = sock.recv(1024)
     print message
     p.DecodePacket(message)
+
     #Packet.getDataNodes() returns a list of elements
+    #They are of the form (address, port)
     data_nodes = p.getDataNodes()
-    node_amount = len(data_nodes) #would be nice if I implemented threads
-    block_size = 1024
-    blocks = []
+    node_amount = len(data_nodes) # would be nice if I implemented threads
+    block_size = 4096 # blocks of size 4K
+    blocks = [] #for the metadata server
 
-    #each data node will have its own list of blocks where
-    #each block has an address, port, and an ID
-    for i in range(node_amount - 1):
-        segment = file_string[(i * block_size):((i + 1) * block_size)]
-        p.BuildPutPacket(filename, block_size)
+    #this divides the file into "blocks"
+    file_segments = partition_string(file_string, block_size)
+    #for iterating the nodes in a round robin style
+    index = 0
 
+    for segment in file_segments:
+        #connecting to the data nodes
+        node_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        IP = data_nodes[index % node_amount][0]
+        PORT = data_nodes[index % node_amount][1]
+        node_sock.connect((IP, PORT))
 
+        #sends the put message to the current data node
+        p.BuildPutPacket(fname, len(segment))
+        sock.sendall(p.getEncodedPacket())
 
+        #waiting for the data node to send an OK
+        sock.recv(1024)
 
+        #sending the block to the data node
+        sock.sendall(segment)
+
+        #receive the unique block ID
+        blockid = sock.recv(1024)
+
+        #adding muh blocks
+        blocks.append(IP, PORT, blockid)
+
+        index += 1
+
+        node_sock.close()
 
     # Notify the metadata server where the blocks are saved.
 
-    # Fill code
+    p.BuildDataBlockPacket(fname, blocks)
+    sock.sendall(p.getEncodedPacket())
+
+    sock.close()
 
 #Doubts
 def copyFromDFS(address, fname, path):
