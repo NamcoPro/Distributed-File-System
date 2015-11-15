@@ -116,7 +116,7 @@ class DataNodeTCPHandler(SocketServer.BaseRequestHandler):
         block_file = open(path_and_name, "w")
 
         # Receive the data block.
-        block = recv_with_size()
+        block = self.recv_with_size()
 
         #writting the block contents to the file
         block_file.write(block)
