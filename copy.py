@@ -96,19 +96,19 @@ def copyToDFS(address, fname, path):
 
         #sends the put message to the current data node
         p.BuildPutPacket(fname, len(segment))
-        sock.sendall(p.getEncodedPacket())
+        node_sock.sendall(p.getEncodedPacket())
 
         #waiting for the data node to send an OK
-        sock.recv(1024)
+        node_sock.recv(1024)
 
         #sending the block to the data node
-        sock.sendall(segment)
+        node_sock.sendall(segment)
 
         #receive the unique block ID
         blockid = sock.recv(1024)
 
         #adding muh blocks
-        blocks.append(IP, PORT, blockid)
+        blocks.append((IP, PORT, blockid))
 
         index += 1
 
@@ -129,7 +129,7 @@ def copyFromDFS(address, fname, path):
         Saves the data in path.
     """
 
-       # Contact the metadata server to ask for information of fname
+    #Contact the metadata server to ask for information of fname
 
     #getting the information given the file's filename
 
