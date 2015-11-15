@@ -26,7 +26,9 @@ def recv_with_size(sock):
 
     sock.sendall("OK")
 
-    message = sock.recv(int(size))
+    message = sock.recv(1024)
+    while(len(message) < int(size)):
+        message += sock.recv(1024)
 
     return message
 
@@ -79,7 +81,9 @@ class DataNodeTCPHandler(SocketServer.BaseRequestHandler):
 
         self.request.sendall("OK")
 
-        message = self.request.recv(int(size))
+        message = self.request.recv(1024)
+        while(len(message) < int(size)):
+            message += self.request.recv(1024)
 
         return message
 
