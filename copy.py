@@ -39,10 +39,6 @@ def partition_string(string, p_size):
         string_list.append(string[(index_limit * p_size):len(string)])
         return string_list
 
-def usage():
-	print """Usage: python %s <server>:<port, default=8000>""" % sys.argv[0]
-	sys.exit(0)
-
 #NEEDLESS OVERHEAD
 #MUH SIZE DOESN'T FIT ALL
 def recv_with_size(sock):
