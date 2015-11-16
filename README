@@ -1,0 +1,107 @@
+###Readme
+###Distributed File System(DFS)
+
+This project attempts to implement the main components of a Distributed File System.
+It contains inter process communication and an implementation of inodes.
+
+Requirements to run:
+Python 2.7.
+Any file you wish to copy.
+
+A brief description of the scripts as follows:
+
+meta-data.py
+This script takes the role of a meta-data server, accepting requests from
+the copy client, the list client, and data node clients. It also communicates with
+the database for each handle. It's more or less the heart of this entire program.
+
+data-node.py
+This script takes the role of a data node client. It registers with the meta-data server
+at first instance and accepts requests from the copy client. Each node saves files given
+from the copy client to its respective folder and saves the data in blocks of 64k or up to
+4096k with bigger files. It also returns the respective blocks when the copy client
+asks for them.
+
+copy.py
+This script takes the role of the glorious copy command. It can copy a given file from the
+Distributed File System to any directory the user desires given that file exists on the
+DFS. It first requests the nodes from the meta-data server and then writes the file
+on the desired path, copying it. It can also copy files to the Distributed File System.
+It contacts the meta-data server, giving the filename and filesize; sends blocks
+to the data nodes; and finally sends a block list with block IDs to the meta-data server.
+
+ls.py
+This script takes the role of the list command. It contacts the meta-data sever and
+receives a list of all the files in the Distributed File System. It prints the file list
+to the user.
+
+mds_db.py
+This script manages the database info for the meta-data server. It uses the MYSQL
+library to implement the functions.
+
+Packet.py
+This script is a class object of Packets used for communication between all the clients.
+It uses the json library.
+
+createdb.py
+This script created a new database for the file system management.
+
+How to run:
+***For the sake of simplicity everything will be run on one computer.
+***Two data nodes will be used, but you can use any number greater than 0.
+
+1) Create a database file
+Before anything, a database needs to be created. The command is
+python createdb.py
+
+2)Run the meta-data server
+This will register with the data base and take requests from mostly everyone.
+We will use port 4017 for this particular server. Run it with
+python meta-data.py 4017
+
+In general:
+python meta-data.py <port>
+
+3)Register the nodes
+We need directories to store our blocks before registering with the meta-data server.
+Node_9000 will have a directory on /home/eduardo/Node_9000/ and port 9000
+Node_9001 will have a directory on /home/eduardo/Code/Distributed-File-System/ and port 9001
+
+Run the nodes with
+python data-node.py localhost 9000 /home/eduardo/Node_9000/ 4017
+python data-node.py localhost 9001 /home/eduardo/Code/Distributed-File-System/ 4017
+
+In general:
+python data-node.py <address> <port> <node directory> <meta-data port>
+
+4)The copy client
+Now that everything is set, one can copy files to the DFS.
+The file we will be using is called sauce and it's currently on the same directory of copy.py.
+
+Let's add the file sauce to the DFS:
+python copy.py sauce localhost:4017:/home/eduardo/Code/Distributed-File-System/
+
+The copy client should return a message acknowledging the addition of the file.
+
+Now let's copy the file sauce to a different directory. Let's say we want it
+on /home/your_name/copies/. We would type:
+python copy.py localhost:4017:/home/your_name/copies/ sauce
+
+That's almost everything with copying. You can try to copy a file outside the
+DFS directory. For example, if my file sauce is in /home/eduardo/, then the command would be
+python copy.py /home/eduardo/sauce localhost:4017:/home/eduardo/Code/Distributed-File-System/
+
+In general:
+Copying to DFS
+python copy.py <filename> <meta address>:<port>:<DFS path>
+
+Copying from the DFS
+python copy.py <meta address>:<port>:<destination path> <filename>
+
+5)Listing
+Not really a required step, but listing to the meta-data server shows every file being handled.
+To list them, type
+python ls.py localhost:4017
+
+In general:
+python ls.py <meta address>:<meta port>
