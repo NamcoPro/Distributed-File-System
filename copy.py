@@ -13,7 +13,9 @@ import os.path
 from Packet import *
 
 def usage():
-    print """Usage:\n\tFrom DFS: python %s <server>:<port>:<dfs file path> <destination file>\n\tTo   DFS: python %s <source file> <server>:<port>:<dfs file path>""" % (sys.argv[0], sys.argv[0])
+    print """Usage:\n\tFrom DFS: python %s <server>:<port>:<dfs file path> \
+    <destination file>\n\tTo   DFS: python %s <source file> \
+    <server>:<port>:<dfs file path>""" % (sys.argv[0], sys.argv[0])
     sys.exit(0)
 
 #This will be used to put the given file into "blocks"
@@ -209,7 +211,10 @@ def copyFromDFS(address, fname, path):
     #getDataNodes has ADDRESS, IP, BLOCK_ID
     data_nodes = p.getDataNodes()
 
-    destination = "%s/%s" % (path, "copy_" + fname)
+    #In case the user specifies a diferent directory
+    filename = fname.split("/")
+
+    destination = "%s/%s" % (path, "copy_" + filename[-1])
     wfile = open(destination, "w")
     for IP, PORT, BLOCK_ID in data_nodes:
         node_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
