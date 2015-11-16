@@ -82,6 +82,7 @@ Let's add the file sauce to the DFS:
 python copy.py sauce localhost:4017:/home/eduardo/Code/Distributed-File-System/
 
 The copy client should return a message acknowledging the addition of the file.
+Your node directories should have "blocks" in them of your file.
 
 Now let's copy the file sauce to a different directory. Let's say we want it
 on /home/your_name/copies/. We would type:
