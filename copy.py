@@ -182,7 +182,7 @@ def copyToDFS(address, dfs_path, filename):
 
     if(meta_message == "ACK"):
         #print "Acknowledged."
-
+        pass
     else:
         print "Something happened."
         print meta_message
