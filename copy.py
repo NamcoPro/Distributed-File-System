@@ -13,9 +13,10 @@ import os.path
 from Packet import *
 
 def usage():
-    print """Usage:\n\tFrom DFS: python %s <server>:<port>:<dfs file path> \
-    <destination file>\n\tTo   DFS: python %s <source file> \
-    <server>:<port>:<dfs file path>""" % (sys.argv[0], sys.argv[0])
+    #it looks ugly here, it's much better on the shell.
+    print """Usage:\nFrom DFS: python %s <server>:<port>:<dfs file path> \
+<destination file>\nTo DFS: python %s <source file> \
+<server>:<port>:<dfs file path>""" % (sys.argv[0], sys.argv[0])
     sys.exit(0)
 
 #This will be used to put the given file into "blocks"
@@ -66,7 +67,6 @@ def divide_list(a_list, d_size):
 
         return nest_list
 
-#NEEDLESS OVERHEAD
 #MUH SIZE DOESN'T FIT ALL
 def recv_with_size(sock):
     """Receives a size so that the message can be sent in one go"""
@@ -93,7 +93,7 @@ def sendall_with_size(sock, message):
     else:
         print "sendall_with_size had a problem with %s." % message
 
-def copyToDFS(address, fname, path):
+def copyToDFS(address, dfs_path, filename):
     """ Contact the metadata server to ask to copy file fname,
         get a list of data nodes. Open the file in path to read,
         divide in blocks and send to the data nodes.
@@ -106,16 +106,16 @@ def copyToDFS(address, fname, path):
 
     # Read file
 
-    rfile = open(fname, "r")
+    rfile = open(filename, "r")
     file_string = rfile.read()
     filesize = len(file_string)
     rfile.close()
 
-    # Create a Put packet with the fname and the length of the data,
+    # Create a Put packet with the filename and the length of the data,
     # and sends it to the metadata server
 
     p = Packet()
-    p.BuildPutPacket(fname, filesize)
+    p.BuildPutPacket(dfs_path, filesize)
     sendall_with_size(sock, p.getEncodedPacket())
 
     # If no error or file exists
@@ -155,7 +155,7 @@ def copyToDFS(address, fname, path):
             node_sock.connect((IP, PORT))
 
             #sends the put message to the current data node
-            p.BuildPutPacket(fname, len(segment))
+            p.BuildPutPacket(dfs_path, len(segment))
             sendall_with_size(node_sock, p.getEncodedPacket())
 
             #waiting for an OK
@@ -176,12 +176,12 @@ def copyToDFS(address, fname, path):
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(address)
-    p.BuildDataBlockPacket(fname, blocks)
+    p.BuildDataBlockPacket(dfs_path, blocks)
     sendall_with_size(sock, p.getEncodedPacket())
     meta_message = recv_with_size(sock)
 
     if(meta_message == "ACK"):
-        print "Acknowledged."
+        #print "Acknowledged."
 
     else:
         print "Something happened."
@@ -189,7 +189,7 @@ def copyToDFS(address, fname, path):
 
     sock.close()
 
-def copyFromDFS(address, fname, path):
+def copyFromDFS(address, dfs_path, filename):
     """ Contact the metadata server to ask for the file blocks of
         the file fname.  Get the data blocks from the data nodes.
         Saves the data in path.
@@ -199,7 +199,7 @@ def copyFromDFS(address, fname, path):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(address)
     p = Packet()
-    p.BuildGetPacket(fname)
+    p.BuildGetPacket(dfs_path)
     sendall_with_size(sock, p.getEncodedPacket())
 
     # If there is no error response Retreive the data blocks
@@ -208,14 +208,18 @@ def copyFromDFS(address, fname, path):
 
     message = recv_with_size(sock)
     p.DecodePacket(message)
-    #getDataNodes has ADDRESS, IP, BLOCK_ID
+    #getDataNodes has ADDRESS, PORT, BLOCK_ID
     data_nodes = p.getDataNodes()
 
+    """Not needed."""
     #In case the user specifies a diferent directory
-    filename = fname.split("/")
 
-    destination = "%s/%s" % (path, "copy_" + filename[-1])
-    wfile = open(destination, "w")
+    #filename = fname.split("/")
+
+    #destination = "%s/%s" % (path, "copy_" + filename[-1])
+    """Not needed."""
+
+    wfile = open(filename, "w")
     for IP, PORT, BLOCK_ID in data_nodes:
         node_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         node_sock.connect((IP, PORT))
@@ -249,7 +253,7 @@ if __name__ == "__main__":
             print "Error: path %s is a directory.  Please name the file." % to_path
             usage()
 
-        copyFromDFS((ip, port), to_path, from_path)
+        copyFromDFS((ip, port), from_path, to_path)
 
     elif len(file_to) > 2:
         ip = file_to[0]
@@ -261,4 +265,4 @@ if __name__ == "__main__":
             print "Error: path %s is a directory.  Please name the file." % from_path
             usage()
 
-        copyToDFS((ip, port), from_path, to_path)
+        copyToDFS((ip, port), to_path, from_path)
