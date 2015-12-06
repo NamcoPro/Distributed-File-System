@@ -17,7 +17,7 @@ import os.path
 
 def usage():
     print """Usage: python %s <server> <port> <data path> \
-    <metadata port,default=8000>""" % sys.argv[0]
+<metadata port,default=8000>""" % sys.argv[0]
     sys.exit(0)
 
 def recv_with_size(sock):
