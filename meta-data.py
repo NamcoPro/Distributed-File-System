@@ -176,11 +176,19 @@ class MetadataTCPHandler(SocketServer.BaseRequestHandler):
 if __name__ == "__main__":
     HOST, PORT = "", 8000
 
-    if len(sys.argv) > 1:
+    if(len(sys.argv) > 2):
+        try:
+            HOST = sys.argv[1]
+            PORT = int(sys.argv[2])
+        except:
+            usage()
+
+    elif len(sys.argv) > 1:
         try:
             PORT = int(sys.argv[1])
         except:
             usage()
+
 
     server = SocketServer.TCPServer((HOST, PORT), MetadataTCPHandler)
 

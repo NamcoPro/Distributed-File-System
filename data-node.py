@@ -162,6 +162,7 @@ class DataNodeTCPHandler(SocketServer.BaseRequestHandler):
 if __name__ == "__main__":
 
     META_PORT = 8000
+    META_HOST = "localhost"
     if len(sys.argv) < 4:
         usage()
 
@@ -170,8 +171,12 @@ if __name__ == "__main__":
         PORT = int(sys.argv[2])
         DATA_PATH = sys.argv[3]
 
-        if len(sys.argv) > 4:
+        if len(sys.argv) == 5:
             META_PORT = int(sys.argv[4])
+
+        elif len(sys.argv) == 6:
+            META_PORT = int(sys.argv[4])
+            META_HOST = sys.argv[5]
 
         if not os.path.isdir(DATA_PATH):
             print "Error: Data path %s is not a directory." % DATA_PATH
@@ -180,7 +185,7 @@ if __name__ == "__main__":
         usage()
 
 
-    register("localhost", META_PORT, HOST, PORT)
+    register(META_HOST, META_PORT, HOST, PORT)
     server = SocketServer.TCPServer((HOST, PORT), DataNodeTCPHandler)
 
     # Activate the server; this will keep running until you
