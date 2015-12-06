@@ -77,20 +77,21 @@ python data-node.py <address> <port> <node directory> <meta-data port>
 4)The copy client
 Now that everything is set, one can copy files to the DFS.
 The file we will be using is called sauce and it's currently on the same directory of copy.py.
+We'll name the file top_sauce on the DFS.
 
 Let's add the file sauce to the DFS:
-python copy.py sauce localhost:4017:/home/eduardo/Code/Distributed-File-System/
+python copy.py sauce localhost:4017:top_sauce
 
-The copy client should return a message acknowledging the addition of the file.
-Your node directories should have "blocks" in them of your file.
+The copy client should finish in no time.
+Your node directories should have "blocks" of your file.
 
-Now let's copy the file sauce to a different directory. Let's say we want it
-on /home/your_name/copies/. We would type:
-python copy.py localhost:4017:/home/your_name/copies/ sauce
+Now let's copy the same sauce file, top_sauce, from the directory. Let's say we want it on the
+directory /home/ed/copies and want to call it not_a_sauce_copy. We would type:
+python copy.py localhost:4017:top_sauce /home/ed/copies/not_a_sauce_copy
 
 That's almost everything with copying. You can try to copy a file outside the
-DFS directory. For example, if my file sauce is in /home/eduardo/, then the command would be
-python copy.py /home/eduardo/sauce localhost:4017:/home/eduardo/Code/Distributed-File-System/
+copy.py directory. For example, if my file sauce is in /home/eduardo/, then the command would be
+python copy.py /home/eduardo/sauce localhost:4017:top_sauce
 
 In general:
 Copying to DFS
@@ -103,6 +104,9 @@ python copy.py <meta address>:<port>:<destination path> <filename>
 Not really a required step, but listing to the meta-data server shows every file being handled.
 To list them, type
 python ls.py localhost:4017
+
+On our example, it should print out:
+top_sauce 9001 bytes
 
 In general:
 python ls.py <meta address>:<meta port>
