@@ -21,55 +21,6 @@ def usage():
  <encrypting key, default=secret:^)>""" % (sys.argv[0], sys.argv[0])
     sys.exit(0)
 
-#This will be used to put the given file into "blocks"
-def partition_string(string, p_size):
-    """Returns a list of substrings of size p_size from the given string.
-       In the case where the given size isn't a divisor of the original
-       string's length, the very last file will have the remainder."""
-    string_list = []
-    if(len(string) < p_size):
-        string_list.append(string)
-        return string_list
-
-    index_limit = len(string) / p_size
-    for i in range(index_limit):
-        #this partitions the string with the desired partition size
-        string_list.append(string[(i * p_size):((i + 1) * p_size)])
-
-    if(len(string) % p_size == 0):
-        return string_list
-
-    else:
-        #the case where there's a remainder
-        string_list.append(string[(index_limit * p_size):len(string)])
-        return string_list
-
-#For the blocks. The database or metadata-server sorts the nodes according to
-#the first one connected.
-def divide_list(a_list, d_size):
-    """Returns a list of lists where the main list is d_size."""
-    nest_list = []
-    if(len(a_list) < d_size):
-        nest_list.append(a_list)
-        return nest_list
-
-    list_size = len(a_list) / d_size
-    for i in range(d_size):
-        temp = [a_list[j] for j in range(i * list_size, (i + 1) * list_size)]
-        nest_list.append(temp)
-
-    #everyone gets their equal share
-    if(len(a_list) % d_size == 0):
-        return nest_list
-
-    #Last one is screwed.
-    else:
-        for i in range(d_size * list_size, len(a_list)):
-            nest_list[d_size - 1].append(a_list[i])
-
-        return nest_list
-
-#MUH SIZE DOESN'T FIT ALL
 def recv_with_size(sock):
     """Receives a size so that the message can be sent in one go"""
     size = sock.recv(1024)
@@ -95,7 +46,7 @@ def sendall_with_size(sock, message):
     else:
         print "sendall_with_size had a problem with %s." % message
 
-def copyToDFS(address, dfs_path, filename, password):
+def copyToDFS(address, dfs_path, filename, password, crypto):
     """ Contact the metadata server to ask to copy file fname,
         get a list of data nodes. Open the file in path to read,
         divide in blocks and send to the data nodes.
@@ -106,12 +57,9 @@ def copyToDFS(address, dfs_path, filename, password):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(address)
 
-    # Read file
+    #get filesize
 
-    rfile = open(filename, "r")
-    file_string = rfile.read()
-    filesize = len(file_string)
-    rfile.close()
+    filesize = os.path.getsize(filename)
 
     # Create a Put packet with the filename and the length of the data,
     # and sends it to the metadata server
@@ -132,41 +80,50 @@ def copyToDFS(address, dfs_path, filename, password):
     #Packet.getDataNodes() returns a list of elements
     #They are of the form (address, port)
     data_nodes = p.getDataNodes()
-    node_amount = len(data_nodes) # would be nice if I implemented threads
+    node_amount = len(data_nodes)
 
-    # blocks of size about 64k
-    block_size = 2 ** 16
-    #for files bigger than 100MB
-    if(filesize > (100 * (10 ** 6))):
-        block_size = 2 ** 22 #blocks of size about 4096K
+    #for distributing the workload
+    if(filesize / node_amount == 0):
+        partition_size = filesize
+    else:
+        partition_size = filesize / node_amount
+
+    #blocks of about 4K
+    block_size = 2 ** 12
+    if(filesize > 40 * (10 ** 6)):
+        #blocks of size about 4096K
+        block_size = 2 ** 22
 
     blocks = [] #for the metadata server
 
-    #this divides the file into "blocks"
-    file_segments = partition_string(file_string, block_size)
-    #this divides the file into shared workloads
-    #threads would be cool, but not today
-    node_workload = divide_list(file_segments, node_amount)
-
-    #Go through every node and sned the given blocks
-    for node_id in range(node_amount):
-        for segment in node_workload[node_id]:
+    rfile = open(filename, "r")
+    for IP, PORT in data_nodes:
+        temp_load = partition_size
+        while(temp_load):
             node_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            IP = data_nodes[node_id][0]
-            PORT = data_nodes[node_id][1]
             node_sock.connect((IP, PORT))
 
-            #encrypts the segment and sends it to a data node
-            crpt_seg = encrypt(password, segment)
+            if(temp_load < block_size):
+                segment = rfile.read(temp_load)
+                temp_load = 0
+            else:
+                segment = rfile.read(block_size)
+                temp_load -= block_size
 
-            #sends the put message to the current data node
+            #variable from the main function to indicate if crypto is needed
+            if(crypto):
+                crpt_seg = encrypt(password, segment)
+            else:
+                crpt_seg = segment
+
+            #sending a put message to the data node
             p.BuildPutPacket(dfs_path, len(crpt_seg))
             sendall_with_size(node_sock, p.getEncodedPacket())
 
-            #waiting for an OK
+            #the OK message
             OK = recv_with_size(node_sock)
 
-            #sending the block to the data node
+            #sends the block to the data node
             sendall_with_size(node_sock, crpt_seg)
 
             #receive the unique block ID
@@ -176,6 +133,43 @@ def copyToDFS(address, dfs_path, filename, password):
             blocks.append((IP, str(PORT), blockid))
 
             node_sock.close()
+
+    #not everything was cleared, the last node gets the load
+    #almost the same code as above
+    if(filesize % node_amount != 0):
+        while(1):
+            node_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            node_sock.connect((data_nodes[-1][0], data_nodes[-1][1]))
+
+            segment = rfile.read(block_size)
+            #encountered an end of file
+            if(segment == ""):
+                break
+
+            if(crypto):
+                crpt_seg = encrypt(password, segment)
+            else:
+                crpt_seg = segment
+
+            #sending a put message to the data node
+            p.BuildPutPacket(dfs_path, len(crpt_seg))
+            sendall_with_size(node_sock, p.getEncodedPacket())
+
+            #the OK message
+            OK = recv_with_size(node_sock)
+
+            #sends the block to the data node
+            sendall_with_size(node_sock, crpt_seg)
+
+            #receive the unique block ID
+            blockid = recv_with_size(node_sock)
+
+            #adding muh blocks
+            blocks.append((IP, str(PORT), blockid))
+
+            node_sock.close()
+
+    rfile.close()
 
     # Notify the metadata server where the blocks are saved.
 
@@ -194,7 +188,7 @@ def copyToDFS(address, dfs_path, filename, password):
 
     sock.close()
 
-def copyFromDFS(address, dfs_path, filename, password):
+def copyFromDFS(address, dfs_path, filename, password, crypto):
     """ Contact the metadata server to ask for the file blocks of
         the file fname.  Get the data blocks from the data nodes.
         Saves the data in path.
@@ -235,7 +229,11 @@ def copyFromDFS(address, dfs_path, filename, password):
         block = recv_with_size(node_sock)
 
         #added for decrypting
-        decrpt_block = decrypt(password, block)
+        if(crypto):
+            decrpt_block = decrypt(password, block)
+
+        else:
+            decrpt_block = block
 
         wfile.write(decrpt_block)
 
@@ -250,13 +248,15 @@ if __name__ == "__main__":
 
     file_from = sys.argv[1].split(":")
     file_to = sys.argv[2].split(":")
-    password = "password"   #maximum security
+    password = "password"   #maximum security, unbreakable
+    crypto = 0
 
     #gets a file from the arguments and uses its contents as a password
     if(len(sys.argv) == 4):
         rfile = open(sys.argv[3], "r")
         password = rfile.read()
         rfile.close()
+        crypto = 1
 
     if len(file_from) > 1:
         ip = file_from[0]
@@ -268,7 +268,7 @@ if __name__ == "__main__":
             print "Error: path %s is a directory.  Please name the file." % to_path
             usage()
 
-        copyFromDFS((ip, port), from_path, to_path, password)
+        copyFromDFS((ip, port), from_path, to_path, password, crypto)
 
     elif len(file_to) > 2:
         ip = file_to[0]
@@ -280,4 +280,4 @@ if __name__ == "__main__":
             print "Error: path %s is a directory.  Please name the file." % from_path
             usage()
 
-        copyToDFS((ip, port), to_path, from_path, password)
+        copyToDFS((ip, port), to_path, from_path, password, crypto)
