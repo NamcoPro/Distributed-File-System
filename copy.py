@@ -11,12 +11,14 @@ import socket
 import sys
 import os.path
 from Packet import *
+from simplecrypt import encrypt, decrypt
 
 def usage():
     #it looks ugly here, it's much better on the shell.
     print """Usage:\nFrom DFS: python %s <server>:<port>:<dfs file path> \
-<destination file>\nTo DFS: python %s <source file> \
-<server>:<port>:<dfs file path>""" % (sys.argv[0], sys.argv[0])
+<destination file> <decrypting key, default=secret:^)>\nTo DFS: python %s \
+ <source file> <server>:<port>:<dfs file path>\
+ <encrypting key, default=secret:^)>""" % (sys.argv[0], sys.argv[0])
     sys.exit(0)
 
 #This will be used to put the given file into "blocks"
@@ -93,7 +95,7 @@ def sendall_with_size(sock, message):
     else:
         print "sendall_with_size had a problem with %s." % message
 
-def copyToDFS(address, dfs_path, filename):
+def copyToDFS(address, dfs_path, filename, password):
     """ Contact the metadata server to ask to copy file fname,
         get a list of data nodes. Open the file in path to read,
         divide in blocks and send to the data nodes.
@@ -154,15 +156,18 @@ def copyToDFS(address, dfs_path, filename):
             PORT = data_nodes[node_id][1]
             node_sock.connect((IP, PORT))
 
+            #encrypts the segment and sends it to a data node
+            crpt_seg = encrypt(password, segment)
+
             #sends the put message to the current data node
-            p.BuildPutPacket(dfs_path, len(segment))
+            p.BuildPutPacket(dfs_path, len(crpt_seg))
             sendall_with_size(node_sock, p.getEncodedPacket())
 
             #waiting for an OK
             OK = recv_with_size(node_sock)
 
             #sending the block to the data node
-            sendall_with_size(node_sock, segment)
+            sendall_with_size(node_sock, crpt_seg)
 
             #receive the unique block ID
             blockid = recv_with_size(node_sock)
@@ -189,7 +194,7 @@ def copyToDFS(address, dfs_path, filename):
 
     sock.close()
 
-def copyFromDFS(address, dfs_path, filename):
+def copyFromDFS(address, dfs_path, filename, password):
     """ Contact the metadata server to ask for the file blocks of
         the file fname.  Get the data blocks from the data nodes.
         Saves the data in path.
@@ -229,7 +234,10 @@ def copyFromDFS(address, dfs_path, filename):
 
         block = recv_with_size(node_sock)
 
-        wfile.write(block)
+        #added for decrypting
+        decrpt_block = decrypt(password, block)
+
+        wfile.write(decrpt_block)
 
         node_sock.close()
 
@@ -242,6 +250,13 @@ if __name__ == "__main__":
 
     file_from = sys.argv[1].split(":")
     file_to = sys.argv[2].split(":")
+    password = "password"   #maximum security
+
+    #gets a file from the arguments and uses its contents as a password
+    if(len(sys.argv) == 4):
+        rfile = open(sys.argv[3], "r")
+        password = rfile.read()
+        rfile.close()
 
     if len(file_from) > 1:
         ip = file_from[0]
@@ -253,7 +268,7 @@ if __name__ == "__main__":
             print "Error: path %s is a directory.  Please name the file." % to_path
             usage()
 
-        copyFromDFS((ip, port), from_path, to_path)
+        copyFromDFS((ip, port), from_path, to_path, password)
 
     elif len(file_to) > 2:
         ip = file_to[0]
@@ -265,4 +280,4 @@ if __name__ == "__main__":
             print "Error: path %s is a directory.  Please name the file." % from_path
             usage()
 
-        copyToDFS((ip, port), to_path, from_path)
+        copyToDFS((ip, port), to_path, from_path, password)
